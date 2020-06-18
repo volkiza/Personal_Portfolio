@@ -1,0 +1,132 @@
+---
+title: "House Database"
+author: "Elizaveta Volkova"
+date: ""
+output: html_document
+---
+
+
+```{r}
+library(MPV)
+library(tidyverse)
+library(corrplot)
+library(shiny)
+library(reshape2)
+library(ggplot2)
+library(ggcorrplot)
+library(ggsci)
+library(randomForest)
+library(grid)
+
+house<-table.b4
+server <-function(input,output){
+output$mytable = DT::renderDataTable({
+  
+if (as.numeric(input$baths)!='0' & as.numeric(input$bedrooms)!='0' & as.numeric(input$rooms)!='0')  {
+house %>%
+      filter(y >= as.numeric(input$priceInput[1]),
+             y <= as.numeric(input$priceInput[2]),
+             x2 == as.numeric(input$baths),
+             x6 == as.numeric(input$rooms),
+             x7==as.numeric(input$bedrooms)) %>% 
+    rename("sale price (1000$)"=y, "taxes (1000$)"=x1,"# bath"=x2, "lot size (1000sqf)"=x3,"living space (1000sqf)"=x4,"# garage stalls"=x5,"# rooms"=x6,"# bedrooms"=x7,"age(yrs)"=x8,"# fireplaces"=x9)
+}
+  
+else if (as.numeric(input$baths)=='0'& as.numeric(input$bedrooms)!='0' & as.numeric(input$rooms)!='0'){
+  house %>%
+      filter(y >= as.numeric(input$priceInput[1]),
+             y <= as.numeric(input$priceInput[2]),
+             x6 == as.numeric(input$rooms),
+             x7==as.numeric(input$bedrooms)) %>% 
+    rename("sale price (1000$)"=y, "taxes (1000$)"=x1,"# bath"=x2, "lot size (1000sqf)"=x3,"living space (1000sqf)"=x4,"# garage stalls"=x5,"# rooms"=x6,"# bedrooms"=x7,"age(yrs)"=x8,"# fireplaces"=x9)
+}
+  
+  else if (as.numeric(input$baths)=='0'& as.numeric(input$bedrooms)!='0' & as.numeric(input$rooms)=='0'){
+  house %>%
+      filter(y >= as.numeric(input$priceInput[1]),
+             y <= as.numeric(input$priceInput[2]),
+             x7==as.numeric(input$bedrooms)) %>% 
+      rename("sale price (1000$)"=y, "taxes (1000$)"=x1,"# bath"=x2, "lot size (1000sqf)"=x3,"living space (1000sqf)"=x4,"# garage stalls"=x5,"# rooms"=x6,"# bedrooms"=x7,"age(yrs)"=x8,"# fireplaces"=x9)
+}
+  
+else if (as.numeric(input$baths)=='0'& as.numeric(input$bedrooms)=='0' & as.numeric(input$rooms)!='0'){
+  house %>%
+      filter(y >= as.numeric(input$priceInput[1]),
+             y <= as.numeric(input$priceInput[2]),
+             x6 == as.numeric(input$rooms)) %>% 
+    rename("sale price (1000$)"=y, "taxes (1000$)"=x1,"# bath"=x2, "lot size (1000sqf)"=x3,"living space (1000sqf)"=x4,"# garage stalls"=x5,"# rooms"=x6,"# bedrooms"=x7,"age(yrs)"=x8,"# fireplaces"=x9)
+}
+  
+  else if (as.numeric(input$baths)=='0'& as.numeric(input$bedrooms)=='0' & as.numeric(input$rooms)=='0'){
+  house %>%
+      filter(y >= as.numeric(input$priceInput[1]),
+             y <= as.numeric(input$priceInput[2])) %>% 
+      rename("sale price (1000$)"=y, "taxes (1000$)"=x1,"# bath"=x2, "lot size (1000sqf)"=x3,"living space (1000sqf)"=x4,"# garage stalls"=x5,"# rooms"=x6,"# bedrooms"=x7,"age(yrs)"=x8,"# fireplaces"=x9)
+  }
+  
+  else if (as.numeric(input$baths)!='0' & as.numeric(input$bedrooms)=='0' & as.numeric(input$rooms)!='0')  {
+house %>%
+      filter(y >= as.numeric(input$priceInput[1]),
+             y <= as.numeric(input$priceInput[2]),
+             x2 == as.numeric(input$baths),
+             x6 == as.numeric(input$rooms)) %>% 
+      rename("sale price (1000$)"=y, "taxes (1000$)"=x1,"# bath"=x2, "lot size (1000sqf)"=x3,"living space (1000sqf)"=x4,"# garage stalls"=x5,"# rooms"=x6,"# bedrooms"=x7,"age(yrs)"=x8,"# fireplaces"=x9)
+}
+  else if (as.numeric(input$baths)!='0' & as.numeric(input$bedrooms)=='0' & as.numeric(input$rooms)=='0')  {
+house %>%
+      filter(y >= as.numeric(input$priceInput[1]),
+             y <= as.numeric(input$priceInput[2]),
+             x2 == as.numeric(input$baths)) %>% 
+      rename("sale price (1000$)"=y, "taxes (1000$)"=x1,"# bath"=x2, "lot size (1000sqf)"=x3,"living space (1000sqf)"=x4,"# garage stalls"=x5,"# rooms"=x6,"# bedrooms"=x7,"age(yrs)"=x8,"# fireplaces"=x9)
+  }
+else if (as.numeric(input$baths)!='0' & as.numeric(input$bedrooms)!='0' & as.numeric(input$rooms)=='0')  {
+house %>%
+      filter(y >= as.numeric(input$priceInput[1]),
+             y <= as.numeric(input$priceInput[2]),
+             x2 == as.numeric(input$baths),
+             x7==as.numeric(input$bedrooms)) %>% 
+    rename("sale price (1000$)"=y, "taxes (1000$)"=x1,"# bath"=x2, "lot size (1000sqf)"=x3,"living space (1000sqf)"=x4,"# garage stalls"=x5,"# rooms"=x6,"# bedrooms"=x7,"age(yrs)"=x8,"# fireplaces"=x9)
+}
+  
+  },height=500,width=700)}
+
+bat<-c("1"="1","1.5"="1.5","Both"="0")
+nrums<-c("5"="5","6"="6","7"="7","8"="8","All"="0")
+nbeds<-c("2"="2","3"='3','4'='4','All'='0')
+ui <- fluidPage(
+
+  h1("Houses database:"),
+  h2(em("Elizaveta Volkova")),
+  
+    fluidRow(
+    column(2,
+      
+      radioButtons("baths", "Bath number",
+            choices = bat,
+            selected = bat[1])),
+      
+     column(2, offset = 1,
+    radioButtons("rooms", "Number of rooms",
+            choices = nrums,
+            selected = nrums[1])
+    ),
+    column(2,
+      radioButtons("bedrooms", "Number of bedrooms",
+            choices = nbeds,
+            selected = nbeds[1])
+    ),
+   
+    column(5,
+       sliderInput("priceInput", "Price in thousands $", min = 20, max = 50,
+                      value = c(30, 40), pre = "thousands $")
+    )
+  ),
+  
+  DT::dataTableOutput("mytable"),
+  
+  hr(),
+
+
+)
+shinyApp(ui=ui,server=server)
+```
